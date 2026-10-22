@@ -454,10 +454,17 @@ void write_csp(const std::string& output_path, const CspWriteConfig& config) {
     // offset_type = 64（U64 寻址）
     file_hdr[12] = 64u;
     file_hdr[13] = 0u;
-    // 其他观察到的头部字段（与参考文件一致）
-    file_hdr[30] = 0xA0u;
-    file_hdr[31] = 0xB0u;
-    file_hdr[32] = 0xFEu;
+    // 字节 30-37（规范第 31-38 字节）：multi scan result offset，
+    // 即 UID_MULTI_SCAN_RESULT 条目在文件中的绝对偏移（小端 uint64）。
+    // 之前这里硬编码了参考文件的值 0x00FEB0A0，与本文件的实际位置不符。
+    // Bytes 30-37: absolute file offset of the UID_MULTI_SCAN_RESULT entry
+    // (spec bytes 31-38). Previously hard-coded from a reference file.
+    const uint64_t multi_scan_result_offset =
+        128u + entry_equipment.size() + entries_assoc.size() +
+        entry_pixel_hdr.size() + total_pixel_bytes;
+    for (int i = 0; i < 8; ++i)
+        file_hdr[30 + i] = static_cast<uint8_t>(multi_scan_result_offset >> (8 * i));
+    // 字节 40：file type，1 = 2.0 版本单层明场
     file_hdr[40] = 0x01u;
     out.write(reinterpret_cast<const char*>(file_hdr.data()), 128);
 
