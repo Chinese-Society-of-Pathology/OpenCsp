@@ -996,6 +996,9 @@ static bool ParseUint32(const char *s, uint32_t *v) {
 
 }  // namespace csp
 
+// 定义 CSP_DECODE_NO_MAIN 后可把本文件作为库源码包含（例如 tests/），不编译命令行入口。
+// Define CSP_DECODE_NO_MAIN to include this file as a library (e.g. from tests/).
+#ifndef CSP_DECODE_NO_MAIN
 int main(int argc, char **argv) {
   if (argc < 2) {
     std::cerr << "Usage:\n"
@@ -1084,3 +1087,4 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+#endif  // CSP_DECODE_NO_MAIN
