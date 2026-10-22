@@ -48,3 +48,42 @@ OpenCsp/
 - `slide/layer*` 目录存放多分辨率金字塔切片图像，layer0 分辨率最高，layer6 最低。
 - 切片文件命名格式为 `{行号}_{列号}.jpeg`，例如 `0_0.jpeg`、`10_5.jpeg` 等。
 - 各层切片总数：layer0=1638, layer1=420, layer2=110, layer3=30, layer4=9, layer5=4, layer6=1。
+
+## English
+
+OpenCsp is the open reference code for **CSP**, a shared storage format for digital pathology whole-slide images (file extension `.csp`, "Chinese Society of Pathology"). It is published with the support of the Pathology Branch of the Chinese Medical Association and the Pathologist Branch of the Chinese Medical Doctor Association. The repository contains:
+
+- `CSP数字病理图像数据存储格式规范260422.docx`: the CSP format specification (Chinese).
+- `DecodeCsp/`: a standalone reader (C++17, no OpenSlide dependency) that parses CSP metadata, the pyramid layers and the tile index, and extracts the raw JPEG tiles.
+- `EncodeCsp/`: a writer that packs pyramid JPEG tiles plus label / macro / thumbnail images into a `.csp` file. `slide.zip` contains the sample input tiles.
+
+### Build and test (Linux, macOS, Windows with MinGW-w64)
+
+Requirements: CMake ≥ 3.17 and a C++17 compiler (GCC, Clang, or MinGW-w64 on Windows; `EncodeCsp/main.cpp` uses `<dirent.h>`, so plain MSVC is not supported yet).
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+The tests decode `DecodeCsp/sample.csp` and check every tile. They then unzip `EncodeCsp/slide.zip`, encode it with `csp_writer`, and check that every tile read back is byte-identical to its source JPEG and that header bytes 30–37 hold the real offset of the multi-scan-result entry.
+
+### Usage
+
+```bash
+# Print metadata, layers and tile counts
+./build/DecodeCsp DecodeCsp/sample.csp
+# Export one tile: layer 0, column 0, row 0
+./build/DecodeCsp DecodeCsp/sample.csp 0 0 0 tile.jpg
+
+# Encode: run from a directory that contains ./slide (see EncodeCsp/readme.txt)
+cd build/roundtrip && ../EncodeCsp/csp_writer   # writes ./output.csp
+```
+
+### Current limitations
+
+- The reader exposes only the first image (focal plane) of a scan. The specification describes multi-plane (z-stack) and multi-channel fluorescence files, but the reference code does not read them yet.
+- The writer produces single-plane brightfield files only.
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
